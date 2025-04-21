@@ -36,6 +36,8 @@ public partial class ThirdAssignmentContext : DbContext
 
     public virtual DbSet<Store> Stores { get; set; }
 
+    public DbSet<Carrier> Carriers { get; set; } = null!;
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
         => optionsBuilder.UseNpgsql("Host=localhost;Port=5432;Database=third_assignment;Username=postgres;Password=Flops513r1");
@@ -74,8 +76,6 @@ public partial class ThirdAssignmentContext : DbContext
                 .HasConstraintName("fk_addresses_customer");
         });
 
-        //modelBuilder.Entity<ProductCategory>()
-            //.HasKey(pc => new { pc.ProductId, pc.CategoryId });
 
         //Хрень подчистить потом
         modelBuilder.Entity<ProductCategory>(entity =>
@@ -116,22 +116,7 @@ public partial class ThirdAssignmentContext : DbContext
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("fk_categories_parent");
 
-            //entity.HasMany(d => d.Products).WithMany(p => p.Categories)
-                //.UsingEntity<Dictionary<string, object>>(
-                    //"ProductCategory",
-                    //r => r.HasOne<Product>().WithMany()
-                        //.HasForeignKey("ProductId")
-                        //.HasConstraintName("fk_pc_product"),
-                    //l => l.HasOne<Category>().WithMany()
-                        //.HasForeignKey("CategoryId")
-                        //.HasConstraintName("fk_pc_category"),
-                    //j =>
-                    //{
-                        //j.HasKey("CategoryId", "ProductId").HasName("pk_product_categories");
-                        //j.ToTable("product_categories");
-                        //j.IndexerProperty<int>("CategoryId").HasColumnName("category_id");
-                        //j.IndexerProperty<int>("ProductId").HasColumnName("product_id");
-                    //});
+
         });
 
         modelBuilder.Entity<Customer>(entity =>
@@ -159,6 +144,30 @@ public partial class ThirdAssignmentContext : DbContext
             entity.Property(e => e.UpdatedAt)
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("updated_at");
+        });
+
+        modelBuilder.Entity<Carrier>(entity =>
+        {
+            entity.HasKey(e => e.CarrierId).HasName("carriers_pkey");
+
+            entity.ToTable("carriers");
+
+            entity.Property(e => e.CarrierName)
+                .HasMaxLength(50)
+                .HasColumnName("carrier_name");
+
+            entity.Property(e => e.ContactUrl)
+                .HasMaxLength(50)
+                .HasColumnName("contact_url");
+
+            entity.Property(e => e.ContactPhone)
+                .HasMaxLength(50)
+                .HasColumnName("contact_phone");
+
+            entity.HasMany(c => c.Orders)
+                .WithOne(o => o.Carrier)
+                .HasForeignKey(o => o.CarrierId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         modelBuilder.Entity<Order>(entity =>
@@ -192,6 +201,16 @@ public partial class ThirdAssignmentContext : DbContext
                 .HasForeignKey(d => d.ShippingAddressId)
                 .OnDelete(DeleteBehavior.Restrict)
                 .HasConstraintName("fk_orders_shipping_address");
+            
+            entity.Property(o => o.TrackingNumber)
+                .HasColumnName("tracking_number")
+                .HasMaxLength(50);
+
+            entity.Property(o => o.ShippedDate)
+                .HasColumnName("shipped_date");
+
+            entity.Property(o => o.DeliveredDate)
+                .HasColumnName("delivered_date");
         });
 
         modelBuilder.Entity<OrderItem>(entity =>
