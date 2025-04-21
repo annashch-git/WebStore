@@ -38,6 +38,8 @@ public partial class ThirdAssignmentContext : DbContext
 
     public DbSet<Carrier> Carriers { get; set; } = null!;
 
+    public virtual DbSet<DiscountCode> DiscountCodes { get; set; }
+    
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
         => optionsBuilder.UseNpgsql("Host=localhost;Port=5432;Database=third_assignment;Username=postgres;Password=Flops513r1");
@@ -170,6 +172,26 @@ public partial class ThirdAssignmentContext : DbContext
                 .OnDelete(DeleteBehavior.SetNull);
         });
 
+        modelBuilder.Entity<DiscountCode>(entity =>
+        {
+            entity.HasKey(e => e.DiscountCodeId).HasName("discount_codes_pkey");
+
+            entity.ToTable("discount_codes");
+
+            entity.Property(e => e.DiscountCodeId).HasColumnName("discount_code_id");
+            entity.Property(e => e.Code)
+                .HasMaxLength(50)
+                .HasColumnName("code");
+            entity.Property(e => e.Description)
+                .HasMaxLength(255)
+                .HasColumnName("description");
+            entity.Property(e => e.DiscountAmount)
+                .HasPrecision(10, 2)
+                .HasColumnName("discount_amount");
+            entity.Property(e => e.IsPercentage)
+                .HasColumnName("is_percentage");
+        });
+
         modelBuilder.Entity<Order>(entity =>
         {
             entity.HasKey(e => e.OrderId).HasName("orders_pkey");
@@ -211,6 +233,14 @@ public partial class ThirdAssignmentContext : DbContext
 
             entity.Property(o => o.DeliveredDate)
                 .HasColumnName("delivered_date");
+
+            entity.Property(e => e.DiscountCodeId).HasColumnName("discount_code_id");
+
+            entity.HasOne(o => o.DiscountCode)
+                .WithMany(dc => dc.Orders)
+                .HasForeignKey(o => o.DiscountCodeId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("fk_orders_discount_code");
         });
 
         modelBuilder.Entity<OrderItem>(entity =>
